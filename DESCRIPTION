@@ -4,18 +4,15 @@ Version: 0.1.0
 Authors@R: person("Grey", "Monroe", email = "gmonroe@ucdavis.edu", role = c("aut", "cre"))
 Description: Give make_gif() a list of plots (ggplot objects, or functions that draw with
     base graphics) and it writes one PNG frame per plot and stitches them into a GIF with the
-    file name, pixel dimensions, frame rate, and output directory you choose. Includes helpers
-    for the common teaching case of rotating a 3D scatterplot with a fitted regression plane
-    and its residuals. Built for PLS 206 (UC Davis) course materials.
+    file name, pixel dimensions, frame rate, and output directory you choose. One function;
+    the frames are whatever you can draw. Built for PLS 206 (UC Davis) course materials.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Imports:
     magick,
-    grDevices,
-    graphics,
-    stats
+    grDevices
 Suggests:
     ggplot2,
     scatterplot3d

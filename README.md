@@ -10,12 +10,10 @@ remotes::install_github("greymonroe/plotgif")
 library(plotgif)
 ```
 
-No install? Source the two files straight from GitHub (needs the `magick` package, and
-`scatterplot3d` for the 3D helpers):
+No install? Source the one file straight from GitHub (needs the `magick` package):
 
 ```r
 source("https://raw.githubusercontent.com/greymonroe/plotgif/main/R/make_gif.R")
-source("https://raw.githubusercontent.com/greymonroe/plotgif/main/R/plane3d.R")
 ```
 
 ## make_gif()
@@ -45,27 +43,38 @@ Arguments: `file`, `dir`, `width`, `height` (pixels), `fps` or per-frame `delay`
 e.g. `delay = c(rep(0.1, 9), 1)` to hold the last frame), `loop` (0 = forever), `res`
 (text size), `keep_frames = TRUE` to keep the PNGs.
 
-## Rotating regression plane
+## Example: a rotating regression plane
 
-The teaching case this was built for: a two-predictor linear model as a plane through a
-3D cloud of points, with the residuals drawn, rotating.
+The teaching case this was built for. Write a function that draws one frame, `lapply()` it
+over the thing that changes (here the viewing angle), and hand the list to `make_gif()`.
+The same three steps make any animation: a growing dataset, a moving threshold, a
+bootstrap, a simulation unfolding.
 
 ```r
-wheat <- read.csv("https://greymonroe.github.io/PLS_206/data/wheat_plants.csv")
+library(scatterplot3d)
+wheat  <- read.csv("https://greymonroe.github.io/PLS_206/data/wheat_plants.csv")
 model2 <- lm(biomass ~ height + nitrogen, data = wheat)
 
-rotate3d_gif(wheat$height, wheat$nitrogen, wheat$biomass, model2,
-             file = "plane.gif", dir = "gifs", width = 800, height = 650,
-             xlab = "Height (cm)", ylab = "Nitrogen (kg/ha)", zlab = "Biomass (g)")
+# 1. a function that draws one frame: points, the fitted plane, and the residuals
+plane_frame <- function(angle) {
+  s3 <- scatterplot3d(wheat$height, wheat$nitrogen, wheat$biomass, angle = angle,
+                      pch = 16, color = "#619CFF", zlim = c(5, 30), box = FALSE,
+                      xlab = "Height (cm)", ylab = "Nitrogen (kg/ha)", zlab = "Biomass (g)")
+  s3$plane3d(model2, draw_polygon = TRUE, polygon_args = list(col = adjustcolor("red", 0.15), border = "red"))
+  obs <- s3$xyz.convert(wheat$height, wheat$nitrogen, wheat$biomass)    # 3D -> 2D
+  fit <- s3$xyz.convert(wheat$height, wheat$nitrogen, fitted(model2))
+  segments(obs$x, obs$y, fit$x, fit$y, col = "purple")                   # residuals
+  points(obs$x, obs$y, pch = 16, col = "#619CFF")
+}
+
+# 2. one frame per angle, 3. stitch
+frames <- lapply(seq(0, 355, by = 5), function(a) function() plane_frame(a))
+make_gif(frames, file = "plane.gif", dir = "gifs", width = 800, height = 650, fps = 12)
 ```
 
 ![rotating regression plane](man/figures/plane.gif)
 
-`rotate3d_gif()` is just `make_gif(plane3d_frames(...))`; `plane3d_frame()` draws a single
-angle if you want a static figure or your own frame list (for example, a rotation that
-pauses: `angles = c(rep(40, 10), seq(40, 400, by = 5))`).
-
 ## Why
 
 Built for [PLS 206](https://greymonroe.github.io/PLS_206/) (Applied Multivariate Modeling,
-UC Davis): the heavy code lives here so course scripts stay a few lines long.
+UC Davis), so that course scripts can make an animation in a few readable lines.
